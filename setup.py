@@ -17,7 +17,7 @@ setup(
         "django-filter==22.1",
         "drf-nested-routers==0.93.4",
         "minio==7.0.2",
-        "s3fs==2022.1.0",
+        "s3fs==2023.3.0",
     ],
     license="Copyright Scaleout Systems AB. See license for details",
     zip_safe=False,
