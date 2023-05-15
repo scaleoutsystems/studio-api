@@ -14,7 +14,7 @@ setup(
         "requests==2.28.1",
         "django-guardian==2.4.0",
         "django-tagulous==1.3.3",
-        "django-filter==22.1",
+        "django-filter==23.2",
         "drf-nested-routers==0.93.4",
         "minio==7.0.2",
         "s3fs==2022.1.0",
