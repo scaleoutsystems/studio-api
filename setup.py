@@ -10,8 +10,8 @@ setup(
     package_dir={"api": "."},
     python_requires=">=3.6,<4",
     install_requires=[
-        "django==4.1.7",
-        "requests==2.28.1",
+        "django==4.2.1",
+        "requests==2.31.0",
         "django-guardian==2.4.0",
         "django-tagulous==1.3.3",
         "django-filter==22.1",
