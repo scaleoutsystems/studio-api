@@ -813,8 +813,20 @@ class ProjectTemplateList(
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["id", "name", "slug"]
 
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return super().get_permissions()
+
     def get_queryset(self):
-        return ProjectTemplate.objects.all()
+        user = self.request.user
+
+        if user.is_staff:
+            return ProjectTemplate.objects.all().order_by("-revision")
+
+        return ProjectTemplate.objects.filter(enabled=True).order_by(
+            "-revision"
+        )
 
     def create(self, request, *args, **kwargs):
         print(request.data)
