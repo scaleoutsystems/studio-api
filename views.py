@@ -90,7 +90,7 @@ class ObjectTypeList(
     filterset_fields = ["id", "name", "slug"]
 
     def get_queryset(self):
-        return ObjectType.objects.all()
+        return ObjectType.objects.filter(enabled=True)
 
 
 class ModelList(
