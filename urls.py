@@ -7,6 +7,8 @@ from .public_views import get_studio_settings
 from .views import (
     AppInstanceList,
     AppList,
+    ClientList,
+    ClientRoleList,
     CustomAuthToken,
     EnvironmentList,
     FlavorsList,
@@ -33,10 +35,13 @@ router.register(
     r"projecttemplates", ProjectTemplateList, basename="projecttemplates"
 )
 
+router.register(r"clientroles", ClientRoleList, basename="clientroles")
+
 models_router = routers.NestedSimpleRouter(
     router, r"projects", lookup="project"
 )
 models_router.register(r"models", ModelList, basename="model")
+models_router.register(r"clients", ClientList, basename="clients")
 models_router.register(r"objecttype", ObjectTypeList, basename="objecttype")
 models_router.register(r"members", MembersList, basename="members")
 models_router.register(r"resources", ResourceList, basename="resources")

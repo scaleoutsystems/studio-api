@@ -2,11 +2,14 @@ import json
 import time
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse
 from django.utils.text import slugify
 from django_filters.rest_framework import DjangoFilterBackend
+from guardian.shortcuts import assign_perm
 from rest_framework import generics
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -34,11 +37,14 @@ from projects.models import (
     ReleaseName,
 )
 from projects.tasks import create_resources_from_template, delete_project_apps
+from user.models import Client, ClientRole
 
 from .APIpermissions import AdminPermission, ProjectPermission
 from .serializers import (
     AppInstanceSerializer,
     AppSerializer,
+    ClientRoleSerializer,
+    ClientSerializer,
     EnvironmentSerializer,
     FlavorsSerializer,
     Metadata,
@@ -496,7 +502,7 @@ class AppInstanceList(
     )
     serializer_class = AppInstanceSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["id", "name", "app__category"]
+    filterset_fields = ["id", "name", "app__category", "app__slug"]
 
     def get_queryset(self):
         return AppInstance.objects.filter(
@@ -866,3 +872,83 @@ class ProjectTemplateList(
         return HttpResponse(
             "Created new template: {}.".format(name), status=200
         )
+
+
+class ClientList(
+    GenericViewSet,
+    CreateModelMixin,
+    RetrieveModelMixin,
+    UpdateModelMixin,
+    ListModelMixin,
+):
+    permission_classes = (
+        IsAuthenticated,
+        ProjectPermission,
+    )
+    serializer_class = ClientSerializer
+    filter_backends = [DjangoFilterBackend]
+
+    def get_queryset(self):
+        project = Project.objects.get_project(
+            user=self.request.user, id=self.kwargs["project_pk"]
+        )
+
+        return Client.objects.filter(Q(instance__project=project))
+
+    def create(self, request, *args, **kwargs):
+        project = Project.objects.get(id=self.kwargs["project_pk"])
+        print(project)
+
+        try:
+            with transaction.atomic():
+                name = request.data["name"]
+                controller_id = request.data["controller"]
+                role = request.data["role"]
+
+                User = get_user_model()
+                password = User.objects.make_random_password()
+
+                user = User.objects.create_user(name, password)
+
+                user.is_client = True
+                user.save()
+
+                app_instance = AppInstance.objects.get(pk=controller_id)
+
+                client = Client.objects.create_client(
+                    user=user,
+                    name=user.username,
+                    owner=self.request.user,
+                    instance=app_instance,
+                )
+
+                client_role = ClientRole.objects.get(name=role)
+
+                client.roles.add(client_role)
+                client.save()
+                assign_perm("can_delete_clients", self.request.user, client)
+                assign_perm("can_update_clients", self.request.user, client)
+                assign_perm(
+                    "can_refresh_client_token", self.request.user, client
+                )
+
+        except Exception as err:
+            print(err)
+            return HttpResponse(
+                "Failed to create object: incorrect input data.", 400
+            )
+
+        return HttpResponse(f"Created new client {name}", 200)
+
+
+class ClientRoleList(
+    GenericViewSet,
+    RetrieveModelMixin,
+    ListModelMixin,
+):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = ClientRoleSerializer
+    filter_backends = [DjangoFilterBackend]
+
+    def get_queryset(self):
+        return ClientRole.objects.all()

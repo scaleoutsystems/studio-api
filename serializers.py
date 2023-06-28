@@ -12,6 +12,7 @@ from projects.models import (
     ProjectTemplate,
     ReleaseName,
 )
+from user.models import Client, ClientRole
 
 
 class MLModelSerializer(ModelSerializer):
@@ -168,4 +169,16 @@ class ReleaseNameSerializer(ModelSerializer):
 class ProjectTemplateSerializer(ModelSerializer):
     class Meta:
         model = ProjectTemplate
+        fields = "__all__"
+
+
+class ClientSerializer(ModelSerializer):
+    class Meta:
+        model = Client
+        fields = "__all__"
+
+
+class ClientRoleSerializer(ModelSerializer):
+    class Meta:
+        model = ClientRole
         fields = "__all__"
